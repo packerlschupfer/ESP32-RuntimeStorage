@@ -1,0 +1,41 @@
+{
+  "name": "ESP32-RuntimeStorage",
+  "version": "0.1.0",
+  "description": "FRAM-based runtime storage for ESP32 with PID state, counters, event logging, and temperature history",
+  "keywords": [
+    "fram",
+    "mb85rc256v",
+    "storage",
+    "persistent",
+    "runtime",
+    "pid",
+    "event-log",
+    "temperature",
+    "esp32",
+    "i2c"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/packerlschupfer/ESP32-RuntimeStorage.git"
+  },
+  "authors": [
+    {
+      "name": "packerlschupfer",
+      "email": "packerlschupfer@noreply.github.com",
+      "maintainer": true
+    }
+  ],
+  "homepage": "https://github.com/packerlschupfer/ESP32-RuntimeStorage",
+  "license": "MIT",
+  "dependencies": {
+    "Wire": "*"
+  },
+  "frameworks": ["arduino"],
+  "platforms": ["espressif32"],
+  "export": {
+    "include": [
+      "src/*.h",
+      "src/*.cpp"
+    ]
+  }
+}
