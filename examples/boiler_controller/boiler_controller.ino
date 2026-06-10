@@ -53,6 +53,18 @@ SimplePID heatingPID;
 SimplePID waterPID;
 OperatingMode currentMode = MODE_OFF;
 
+// Forward declarations (Arduino does not auto-prototype functions taking
+// namespaced parameter types such as rtstorage::Temperature_t)
+void printStatus(rtstorage::Temperature_t flow, rtstorage::Temperature_t ret,
+                 rtstorage::Temperature_t outside, rtstorage::Temperature_t room);
+void showStatistics();
+void handleSerialCommands();
+void setMode(OperatingMode mode);
+void showEventLog();
+void showTemperatureHistory();
+const char* getModeName(OperatingMode mode);
+void printHelp();
+
 void setup() {
     Serial.begin(115200);
     while (!Serial) delay(10);
