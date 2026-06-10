@@ -131,8 +131,8 @@ bool testRawAccess() {
 bool testPIDStates() {
     Serial.print(F("Testing PID states... "));
     
-    for (uint8_t i = 0; i < RuntimeStorage::MAX_PID_CONTROLLERS; i++) {
-        RuntimeStorage::PIDState writeState = {
+    for (uint8_t i = 0; i < rtstorage::MAX_PID_CONTROLLERS; i++) {
+        rtstorage::PIDState writeState = {
             .integral = random(1000) / 10.0f,
             .lastError = random(200) / 10.0f - 10.0f,
             .output = random(101),
@@ -146,7 +146,7 @@ bool testPIDStates() {
         }
         stats.totalWrites++;
         
-        RuntimeStorage::PIDState readState;
+        rtstorage::PIDState readState;
         if (!fram.loadPIDState(i, readState)) {
             stats.readErrors++;
             Serial.println(F("READ ERROR"));
@@ -155,7 +155,7 @@ bool testPIDStates() {
         stats.totalReads++;
         
         // Verify (excluding CRC field)
-        if (memcmp(&writeState, &readState, sizeof(RuntimeStorage::PIDState) - sizeof(uint32_t)) != 0) {
+        if (memcmp(&writeState, &readState, sizeof(rtstorage::PIDState) - sizeof(uint32_t)) != 0) {
             stats.crcErrors++;
             Serial.println(F("DATA MISMATCH"));
             return false;
@@ -171,17 +171,17 @@ bool testCounters() {
     
     // Test rapid increments
     for (int i = 0; i < 100; i++) {
-        uint32_t before = fram.getCounter(RuntimeStorage::COUNTER_BURNER_STARTS);
+        uint32_t before = fram.getCounter(rtstorage::COUNTER_BURNER_STARTS);
         stats.totalReads++;
         
-        if (!fram.incrementCounter(RuntimeStorage::COUNTER_BURNER_STARTS)) {
+        if (!fram.incrementCounter(rtstorage::COUNTER_BURNER_STARTS)) {
             stats.writeErrors++;
             Serial.println(F("INCREMENT ERROR"));
             return false;
         }
         stats.totalWrites++;
         
-        uint32_t after = fram.getCounter(RuntimeStorage::COUNTER_BURNER_STARTS);
+        uint32_t after = fram.getCounter(rtstorage::COUNTER_BURNER_STARTS);
         stats.totalReads++;
         
         if (after != before + 1) {
@@ -199,10 +199,10 @@ bool testEventLogging() {
     Serial.print(F("Testing event logging... "));
     
     // Fill event log
-    for (int i = 0; i < RuntimeStorage::MAX_EVENTS * 2; i++) {  // Overflow test
-        RuntimeStorage::Event event = {
+    for (int i = 0; i < rtstorage::MAX_EVENTS * 2; i++) {  // Overflow test
+        rtstorage::Event event = {
             .timestamp = millis(),
-            .type = (RuntimeStorage::EventType)(1 << (i % 5)),
+            .type = (rtstorage::EventType)(1 << (i % 5)),
             .subtype = (uint8_t)(i & 0xFF),
             .data = (uint16_t)i
         };
@@ -217,13 +217,13 @@ bool testEventLogging() {
     
     // Verify circular buffer behavior
     size_t count = fram.getEventCount();
-    if (count != RuntimeStorage::MAX_EVENTS) {
-        Serial.printf("COUNT ERROR: %d != %d\n", count, RuntimeStorage::MAX_EVENTS);
+    if (count != rtstorage::MAX_EVENTS) {
+        Serial.printf("COUNT ERROR: %d != %d\n", count, rtstorage::MAX_EVENTS);
         return false;
     }
     
     // Read back events
-    RuntimeStorage::Event events[10];
+    rtstorage::Event events[10];
     size_t read = fram.getEvents(events, 10);
     stats.totalReads += read;
     
@@ -240,9 +240,9 @@ bool testTemperatureHistory() {
     Serial.print(F("Testing temperature history... "));
     
     // Write temperature data for all sensors
-    for (uint8_t sensor = 0; sensor < RuntimeStorage::MAX_TEMP_SENSORS; sensor++) {
-        for (int i = 0; i < RuntimeStorage::TEMP_HISTORY_SIZE + 10; i++) {  // Overflow test
-            RuntimeStorage::Temperature_t temp = 200 + random(600);  // 20-80°C
+    for (uint8_t sensor = 0; sensor < rtstorage::MAX_TEMP_SENSORS; sensor++) {
+        for (int i = 0; i < rtstorage::TEMP_HISTORY_SIZE + 10; i++) {  // Overflow test
+            rtstorage::Temperature_t temp = 200 + random(600);  // 20-80°C
             
             if (!fram.recordTemperature(sensor, temp)) {
                 stats.writeErrors++;
@@ -254,8 +254,8 @@ bool testTemperatureHistory() {
     }
     
     // Verify latest readings
-    for (uint8_t sensor = 0; sensor < RuntimeStorage::MAX_TEMP_SENSORS; sensor++) {
-        RuntimeStorage::TempReading reading;
+    for (uint8_t sensor = 0; sensor < rtstorage::MAX_TEMP_SENSORS; sensor++) {
+        rtstorage::TempReading reading;
         if (!fram.getLatestTemperature(sensor, reading)) {
             stats.readErrors++;
             Serial.println(F("READ ERROR"));
@@ -279,7 +279,7 @@ bool testConcurrentAccess() {
     // Simulate multiple systems accessing FRAM
     for (int i = 0; i < 50; i++) {
         // System 1: Update counters
-        fram.incrementCounter(RuntimeStorage::COUNTER_HEATING_PUMP_STARTS);
+        fram.incrementCounter(rtstorage::COUNTER_HEATING_PUMP_STARTS);
         stats.totalWrites++;
         
         // System 2: Log temperature
@@ -287,7 +287,7 @@ bool testConcurrentAccess() {
         stats.totalWrites++;
         
         // System 3: Save PID state
-        RuntimeStorage::PIDState pid = {
+        rtstorage::PIDState pid = {
             .integral = i * 1.5f,
             .lastError = i * 0.1f,
             .output = i % 100,
@@ -297,12 +297,12 @@ bool testConcurrentAccess() {
         stats.totalWrites++;
         
         // System 4: Log event
-        fram.logEvent(RuntimeStorage::EVENT_STATE_CHANGE, i);
+        fram.logEvent(rtstorage::EVENT_STATE_CHANGE, i);
         stats.totalWrites++;
         
         // Verify a random operation
         if (i % 10 == 0) {
-            uint32_t counter = fram.getCounter(RuntimeStorage::COUNTER_HEATING_PUMP_STARTS);
+            uint32_t counter = fram.getCounter(rtstorage::COUNTER_HEATING_PUMP_STARTS);
             stats.totalReads++;
             if (counter < i / 2) {  // Rough check
                 Serial.println(F("CONSISTENCY ERROR"));
@@ -319,7 +319,7 @@ bool testPowerLossRecovery() {
     Serial.print(F("Testing power loss recovery... "));
     
     // Save known state
-    RuntimeStorage::SystemState state = {
+    rtstorage::SystemState state = {
         .operatingMode = 0xAA,
         .activeErrors = 0x5555,
         .lastShutdownReason = 0xBB,
@@ -334,14 +334,14 @@ bool testPowerLossRecovery() {
     stats.totalWrites++;
     
     // Save some counters
-    fram.setCounter(RuntimeStorage::COUNTER_ERROR_COUNT, 0xDEADBEEF);
+    fram.setCounter(rtstorage::COUNTER_ERROR_COUNT, 0xDEADBEEF);
     stats.totalWrites++;
     
     // Simulate power loss (just verify data persists)
     delay(10);
     
     // Read back and verify
-    RuntimeStorage::SystemState readState;
+    rtstorage::SystemState readState;
     if (!fram.loadSystemState(readState)) {
         stats.readErrors++;
         Serial.println(F("LOAD ERROR"));
@@ -349,12 +349,12 @@ bool testPowerLossRecovery() {
     }
     stats.totalReads++;
     
-    if (memcmp(&state, &readState, sizeof(RuntimeStorage::SystemState) - sizeof(uint32_t)) != 0) {
+    if (memcmp(&state, &readState, sizeof(rtstorage::SystemState) - sizeof(uint32_t)) != 0) {
         Serial.println(F("STATE MISMATCH"));
         return false;
     }
     
-    uint32_t counter = fram.getCounter(RuntimeStorage::COUNTER_ERROR_COUNT);
+    uint32_t counter = fram.getCounter(rtstorage::COUNTER_ERROR_COUNT);
     stats.totalReads++;
     if (counter != 0xDEADBEEF) {
         Serial.printf("COUNTER MISMATCH: 0x%08X\n", counter);

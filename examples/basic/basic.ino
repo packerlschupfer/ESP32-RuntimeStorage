@@ -43,29 +43,29 @@ void setup() {
     
     // Log startup event
     Serial.println(F("\nLogging startup event..."));
-    fram.logEvent(RuntimeStorage::EVENT_SYSTEM, 0x01);
+    fram.logEvent(rtstorage::EVENT_SYSTEM, 0x01);
     
     // Save some test data
     Serial.println(F("\nSaving test data..."));
     
     // Save a counter
-    uint32_t startCount = fram.getCounter(RuntimeStorage::COUNTER_BURNER_STARTS);
+    uint32_t startCount = fram.getCounter(rtstorage::COUNTER_BURNER_STARTS);
     Serial.printf("Current burner starts: %lu\n", startCount);
-    fram.incrementCounter(RuntimeStorage::COUNTER_BURNER_STARTS);
-    Serial.printf("After increment: %lu\n", fram.getCounter(RuntimeStorage::COUNTER_BURNER_STARTS));
+    fram.incrementCounter(rtstorage::COUNTER_BURNER_STARTS);
+    Serial.printf("After increment: %lu\n", fram.getCounter(rtstorage::COUNTER_BURNER_STARTS));
     
     // Save runtime hours
-    float hours = fram.getRuntimeHours(RuntimeStorage::RUNTIME_TOTAL);
+    float hours = fram.getRuntimeHours(rtstorage::RUNTIME_TOTAL);
     Serial.printf("Total runtime: %.2f hours\n", hours);
-    fram.updateRuntimeHours(RuntimeStorage::RUNTIME_TOTAL, hours + 0.1);
+    fram.updateRuntimeHours(rtstorage::RUNTIME_TOTAL, hours + 0.1);
     
     // Save a temperature reading
-    RuntimeStorage::Temperature_t temp = 652;  // 65.2°C
+    rtstorage::Temperature_t temp = 652;  // 65.2°C
     fram.recordTemperature(SENSOR_BOILER_OUTPUT, temp);
     Serial.printf("Recorded temperature: %.1f°C\n", temp / 10.0);
     
     // Save PID state
-    RuntimeStorage::PIDState pidState = {
+    rtstorage::PIDState pidState = {
         .integral = 123.45f,
         .lastError = -2.5f,
         .output = 75.0f,
@@ -75,7 +75,7 @@ void setup() {
     Serial.println(F("PID state saved"));
     
     // Save system state
-    RuntimeStorage::SystemState sysState = {
+    rtstorage::SystemState sysState = {
         .operatingMode = 1,      // Heating mode
         .activeErrors = 0,
         .lastShutdownReason = 0,
@@ -99,18 +99,18 @@ void loop() {
         Serial.printf("Events logged: %d\n", fram.getEventCount());
         
         // Show latest temperature
-        RuntimeStorage::TempReading lastTemp;
+        rtstorage::TempReading lastTemp;
         if (fram.getLatestTemperature(SENSOR_BOILER_OUTPUT, lastTemp)) {
             Serial.printf("Last temperature: %.1f°C at %lu ms\n", 
                          lastTemp.temperature / 10.0, lastTemp.timestamp);
         }
         
         // Show runtime
-        float totalHours = fram.getRuntimeHours(RuntimeStorage::RUNTIME_TOTAL);
+        float totalHours = fram.getRuntimeHours(rtstorage::RUNTIME_TOTAL);
         Serial.printf("Total runtime: %.2f hours\n", totalHours);
         
         // Load and verify PID state
-        RuntimeStorage::PIDState loadedPid;
+        rtstorage::PIDState loadedPid;
         if (fram.loadPIDState(0, loadedPid)) {
             Serial.printf("PID integral: %.2f\n", loadedPid.integral);
         }
@@ -121,18 +121,18 @@ void loop() {
         lastTempLog = millis();
         
         // Simulate temperature reading
-        RuntimeStorage::Temperature_t temp = 600 + random(-50, 50);  // 60°C ± 5°C
+        rtstorage::Temperature_t temp = 600 + random(-50, 50);  // 60°C ± 5°C
         fram.recordTemperature(SENSOR_BOILER_OUTPUT, temp);
         Serial.printf("\nLogged temperature: %.1f°C\n", temp / 10.0);
         
         // Occasionally log an event
         if (random(0, 3) == 0) {
-            RuntimeStorage::EventType types[] = {
-                RuntimeStorage::EVENT_WARNING,
-                RuntimeStorage::EVENT_STATE_CHANGE,
-                RuntimeStorage::EVENT_USER_ACTION
+            rtstorage::EventType types[] = {
+                rtstorage::EVENT_WARNING,
+                rtstorage::EVENT_STATE_CHANGE,
+                rtstorage::EVENT_USER_ACTION
             };
-            RuntimeStorage::EventType type = types[random(0, 3)];
+            rtstorage::EventType type = types[random(0, 3)];
             fram.logEvent(type, random(0, 100));
             Serial.printf("Logged event type 0x%02X\n", type);
         }

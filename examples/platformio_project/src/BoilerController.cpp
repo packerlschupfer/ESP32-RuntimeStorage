@@ -29,7 +29,7 @@ BoilerController::BoilerController()
     }
 }
 
-bool BoilerController::begin(RuntimeStorage::RuntimeStorage* storage, 
+bool BoilerController::begin(rtstorage::RuntimeStorage* storage, 
                            SemaphoreHandle_t* i2cMutex) {
     if (!storage || !i2cMutex) {
         return false;
@@ -40,7 +40,7 @@ bool BoilerController::begin(RuntimeStorage::RuntimeStorage* storage,
     
     // Load PID states from FRAM
     for (uint8_t i = 0; i < 4; i++) {
-        RuntimeStorage::PIDState state;
+        rtstorage::PIDState state;
         if (_storage->loadPIDState(i, state)) {
             _pidControllers[i].integral = state.integral;
             _pidControllers[i].lastError = state.lastError;
@@ -123,15 +123,15 @@ void BoilerController::runControlLogic() {
                 if (now - _burnerStopTime >= BURNER_MIN_OFF_TIME) {
                     _burnerOn = true;
                     _burnerStartTime = now;
-                    _storage->incrementCounter(RuntimeStorage::COUNTER_BURNER_STARTS);
-                    _storage->logEvent(RuntimeStorage::EVENT_STATE_CHANGE, 0x0100);  // Burner on
+                    _storage->incrementCounter(rtstorage::COUNTER_BURNER_STARTS);
+                    _storage->logEvent(rtstorage::EVENT_STATE_CHANGE, 0x0100);  // Burner on
                 }
             } else if (_burnerOn && _flowTemp > targetFlow + 5.0f) {
                 // Check minimum on time
                 if (now - _burnerStartTime >= BURNER_MIN_ON_TIME) {
                     _burnerOn = false;
                     _burnerStopTime = now;
-                    _storage->logEvent(RuntimeStorage::EVENT_STATE_CHANGE, 0x0101);  // Burner off
+                    _storage->logEvent(rtstorage::EVENT_STATE_CHANGE, 0x0101);  // Burner off
                 }
             }
             
@@ -148,7 +148,7 @@ void BoilerController::runControlLogic() {
                 if (now - _burnerStopTime >= BURNER_MIN_OFF_TIME) {
                     _burnerOn = true;
                     _burnerStartTime = now;
-                    _storage->incrementCounter(RuntimeStorage::COUNTER_BURNER_STARTS);
+                    _storage->incrementCounter(rtstorage::COUNTER_BURNER_STARTS);
                 }
             } else if (_burnerOn && _flowTemp > targetFlow + 5.0f) {
                 if (now - _burnerStartTime >= BURNER_MIN_ON_TIME) {
@@ -239,7 +239,7 @@ void BoilerController::checkSafetyConditions() {
     // Update error counter if new errors
     if (newErrors != 0 && _lastErrorCode != newErrors) {
         _lastErrorCode = newErrors;
-        _storage->incrementCounter(RuntimeStorage::COUNTER_ERROR_COUNT);
+        _storage->incrementCounter(rtstorage::COUNTER_ERROR_COUNT);
     }
 }
 
@@ -264,8 +264,8 @@ void BoilerController::updateOutputs() {
         lastRuntimeUpdate = millis();
         
         if (_burnerOn) {
-            float hours = _storage->getRuntimeHours(RuntimeStorage::RUNTIME_BURNER);
-            _storage->updateRuntimeHours(RuntimeStorage::RUNTIME_BURNER, hours + (1.0f / 3600.0f));
+            float hours = _storage->getRuntimeHours(rtstorage::RUNTIME_BURNER);
+            _storage->updateRuntimeHours(rtstorage::RUNTIME_BURNER, hours + (1.0f / 3600.0f));
         }
     }
 }
@@ -302,7 +302,7 @@ const char* BoilerController::getModeName() const {
     }
 }
 
-bool BoilerController::getPIDState(uint8_t controllerId, RuntimeStorage::PIDState& state) const {
+bool BoilerController::getPIDState(uint8_t controllerId, rtstorage::PIDState& state) const {
     if (controllerId >= 4) {
         return false;
     }
@@ -343,18 +343,18 @@ float BoilerController::simulateTemperature(float current, float target, float r
 }
 
 void BoilerController::logStateChange(uint8_t oldMode, uint8_t newMode) {
-    _storage->logEvent(RuntimeStorage::EVENT_STATE_CHANGE, (oldMode << 8) | newMode);
+    _storage->logEvent(rtstorage::EVENT_STATE_CHANGE, (oldMode << 8) | newMode);
     
     // Update pump start counters
     if (newMode == MODE_HEATING || newMode == MODE_BOTH) {
         if (oldMode != MODE_HEATING && oldMode != MODE_BOTH) {
-            _storage->incrementCounter(RuntimeStorage::COUNTER_HEATING_PUMP_STARTS);
+            _storage->incrementCounter(rtstorage::COUNTER_HEATING_PUMP_STARTS);
         }
     }
     
     if (newMode == MODE_HOT_WATER || newMode == MODE_BOTH) {
         if (oldMode != MODE_HOT_WATER && oldMode != MODE_BOTH) {
-            _storage->incrementCounter(RuntimeStorage::COUNTER_WATER_PUMP_STARTS);
+            _storage->incrementCounter(rtstorage::COUNTER_WATER_PUMP_STARTS);
         }
     }
 }

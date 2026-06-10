@@ -13,7 +13,7 @@
 #include "BoilerController.h"
 
 // Create global instances
-RuntimeStorage::RuntimeStorage storage;
+rtstorage::RuntimeStorage storage;
 BoilerController boilerController;
 
 // Task handles
@@ -82,8 +82,8 @@ void setup() {
     storage.printMemoryMap();
     
     // Log system startup
-    storage.logEvent(RuntimeStorage::EVENT_SYSTEM, 0x01);  // System start
-    storage.incrementCounter(RuntimeStorage::COUNTER_SYSTEM_RESTARTS);
+    storage.logEvent(rtstorage::EVENT_SYSTEM, 0x01);  // System start
+    storage.incrementCounter(rtstorage::COUNTER_SYSTEM_RESTARTS);
     
     // Initialize boiler controller
     Serial.println(F("\nInitializing Boiler Controller..."));
@@ -95,7 +95,7 @@ void setup() {
     }
     
     // Restore system state
-    RuntimeStorage::SystemState sysState;
+    rtstorage::SystemState sysState;
     if (storage.loadSystemState(sysState)) {
         Serial.println(F("\nRestored system state:"));
         Serial.printf("  Operating Mode: %d\n", sysState.operatingMode);
@@ -109,21 +109,21 @@ void setup() {
     // Show statistics
     Serial.println(F("\nSystem Statistics:"));
     Serial.printf("  System Restarts: %lu\n", 
-        storage.getCounter(RuntimeStorage::COUNTER_SYSTEM_RESTARTS));
+        storage.getCounter(rtstorage::COUNTER_SYSTEM_RESTARTS));
     Serial.printf("  Total Runtime: %.2f hours\n", 
-        storage.getRuntimeHours(RuntimeStorage::RUNTIME_TOTAL));
+        storage.getRuntimeHours(rtstorage::RUNTIME_TOTAL));
     Serial.printf("  Error Count: %lu\n", 
-        storage.getCounter(RuntimeStorage::COUNTER_ERROR_COUNT));
+        storage.getCounter(rtstorage::COUNTER_ERROR_COUNT));
     
     // Check for errors
-    RuntimeStorage::ErrorStats errorStats;
+    rtstorage::ErrorStats errorStats;
     if (storage.getErrorStats(errorStats)) {
         if (errorStats.criticalErrors > 0) {
             Serial.printf("\nWARNING: %lu critical errors detected!\n", 
                 errorStats.criticalErrors);
             
             // Show last few critical errors
-            RuntimeStorage::ErrorEntry errors[3];
+            rtstorage::ErrorEntry errors[3];
             size_t count = storage.getCriticalErrors(errors, 3);
             for (size_t i = 0; i < count; i++) {
                 Serial.printf("  [%lu] Code: 0x%04X - %s\n", 
@@ -259,32 +259,32 @@ void storageTask(void* parameter) {
     while (true) {
         // Save PID states
         for (uint8_t i = 0; i < 4; i++) {
-            RuntimeStorage::PIDState pidState;
+            rtstorage::PIDState pidState;
             if (boilerController.getPIDState(i, pidState)) {
                 storage.savePIDState(i, pidState);
             }
         }
         
         // Update runtime hours
-        float currentHours = storage.getRuntimeHours(RuntimeStorage::RUNTIME_TOTAL);
-        storage.updateRuntimeHours(RuntimeStorage::RUNTIME_TOTAL, 
+        float currentHours = storage.getRuntimeHours(rtstorage::RUNTIME_TOTAL);
+        storage.updateRuntimeHours(rtstorage::RUNTIME_TOTAL, 
             currentHours + (5.0 / 3600.0));  // Add 5 seconds
         
         // Update mode-specific runtime
         uint8_t mode = boilerController.getOperatingMode();
         if (mode == 1 || mode == 3) {  // Heating or Both
-            currentHours = storage.getRuntimeHours(RuntimeStorage::RUNTIME_HEATING);
-            storage.updateRuntimeHours(RuntimeStorage::RUNTIME_HEATING, 
+            currentHours = storage.getRuntimeHours(rtstorage::RUNTIME_HEATING);
+            storage.updateRuntimeHours(rtstorage::RUNTIME_HEATING, 
                 currentHours + (5.0 / 3600.0));
         }
         if (mode == 2 || mode == 3) {  // Water or Both
-            currentHours = storage.getRuntimeHours(RuntimeStorage::RUNTIME_WATER);
-            storage.updateRuntimeHours(RuntimeStorage::RUNTIME_WATER, 
+            currentHours = storage.getRuntimeHours(rtstorage::RUNTIME_WATER);
+            storage.updateRuntimeHours(rtstorage::RUNTIME_WATER, 
                 currentHours + (5.0 / 3600.0));
         }
         
         // Save system state
-        RuntimeStorage::SystemState sysState = {
+        rtstorage::SystemState sysState = {
             .operatingMode = mode,
             .activeErrors = boilerController.getActiveErrors(),
             .lastShutdownReason = 0,  // Normal operation
@@ -304,29 +304,29 @@ void handleSerialCommands() {
         switch (cmd) {
             case '0':  // Off
                 boilerController.setOperatingMode(0);
-                storage.logEvent(RuntimeStorage::EVENT_USER_ACTION, 0);
+                storage.logEvent(rtstorage::EVENT_USER_ACTION, 0);
                 Serial.println(F("Mode: OFF"));
                 break;
                 
             case '1':  // Heating
                 boilerController.setOperatingMode(1);
-                storage.logEvent(RuntimeStorage::EVENT_USER_ACTION, 1);
-                storage.incrementCounter(RuntimeStorage::COUNTER_HEATING_PUMP_STARTS);
+                storage.logEvent(rtstorage::EVENT_USER_ACTION, 1);
+                storage.incrementCounter(rtstorage::COUNTER_HEATING_PUMP_STARTS);
                 Serial.println(F("Mode: HEATING"));
                 break;
                 
             case '2':  // Hot Water
                 boilerController.setOperatingMode(2);
-                storage.logEvent(RuntimeStorage::EVENT_USER_ACTION, 2);
-                storage.incrementCounter(RuntimeStorage::COUNTER_WATER_PUMP_STARTS);
+                storage.logEvent(rtstorage::EVENT_USER_ACTION, 2);
+                storage.incrementCounter(rtstorage::COUNTER_WATER_PUMP_STARTS);
                 Serial.println(F("Mode: HOT WATER"));
                 break;
                 
             case '3':  // Both
                 boilerController.setOperatingMode(3);
-                storage.logEvent(RuntimeStorage::EVENT_USER_ACTION, 3);
-                storage.incrementCounter(RuntimeStorage::COUNTER_HEATING_PUMP_STARTS);
-                storage.incrementCounter(RuntimeStorage::COUNTER_WATER_PUMP_STARTS);
+                storage.logEvent(rtstorage::EVENT_USER_ACTION, 3);
+                storage.incrementCounter(rtstorage::COUNTER_HEATING_PUMP_STARTS);
+                storage.incrementCounter(rtstorage::COUNTER_WATER_PUMP_STARTS);
                 Serial.println(F("Mode: HEATING + HOT WATER"));
                 break;
                 
@@ -388,19 +388,19 @@ void printSystemStatus() {
     
     // Runtime
     Serial.println(F("\nRuntime Hours:"));
-    Serial.printf("  Total: %.2f\n", storage.getRuntimeHours(RuntimeStorage::RUNTIME_TOTAL));
-    Serial.printf("  Heating: %.2f\n", storage.getRuntimeHours(RuntimeStorage::RUNTIME_HEATING));
-    Serial.printf("  Water: %.2f\n", storage.getRuntimeHours(RuntimeStorage::RUNTIME_WATER));
-    Serial.printf("  Burner: %.2f\n", storage.getRuntimeHours(RuntimeStorage::RUNTIME_BURNER));
+    Serial.printf("  Total: %.2f\n", storage.getRuntimeHours(rtstorage::RUNTIME_TOTAL));
+    Serial.printf("  Heating: %.2f\n", storage.getRuntimeHours(rtstorage::RUNTIME_HEATING));
+    Serial.printf("  Water: %.2f\n", storage.getRuntimeHours(rtstorage::RUNTIME_WATER));
+    Serial.printf("  Burner: %.2f\n", storage.getRuntimeHours(rtstorage::RUNTIME_BURNER));
     
     // Counters
     Serial.println(F("\nCounters:"));
     Serial.printf("  Burner Starts: %lu\n", 
-        storage.getCounter(RuntimeStorage::COUNTER_BURNER_STARTS));
+        storage.getCounter(rtstorage::COUNTER_BURNER_STARTS));
     Serial.printf("  System Restarts: %lu\n", 
-        storage.getCounter(RuntimeStorage::COUNTER_SYSTEM_RESTARTS));
+        storage.getCounter(rtstorage::COUNTER_SYSTEM_RESTARTS));
     Serial.printf("  Error Count: %lu\n", 
-        storage.getCounter(RuntimeStorage::COUNTER_ERROR_COUNT));
+        storage.getCounter(rtstorage::COUNTER_ERROR_COUNT));
     
     // Task status
     Serial.println(F("\nTask Status:"));
@@ -416,7 +416,7 @@ void showErrors() {
     Serial.println(F("\n=== Error Log ==="));
     
     // Show statistics
-    RuntimeStorage::ErrorStats stats;
+    rtstorage::ErrorStats stats;
     if (storage.getErrorStats(stats)) {
         Serial.printf("Total Errors: %lu\n", stats.totalErrors);
         Serial.printf("Critical Errors: %lu\n", stats.criticalErrors);
@@ -433,7 +433,7 @@ void showErrors() {
     size_t showCount = min(errorCount, (size_t)10);
     
     for (size_t i = 0; i < showCount; i++) {
-        RuntimeStorage::ErrorEntry entry;
+        rtstorage::ErrorEntry entry;
         if (storage.getError(i, entry)) {
             Serial.printf("[%lu] Code: 0x%04X", 
                 (millis() - entry.timestamp) / 1000, entry.errorCode);
@@ -451,7 +451,7 @@ void showErrors() {
     // Show critical errors
     if (stats.criticalErrors > 0) {
         Serial.println(F("\nCritical Errors:"));
-        RuntimeStorage::ErrorEntry criticalErrors[5];
+        rtstorage::ErrorEntry criticalErrors[5];
         size_t count = storage.getCriticalErrors(criticalErrors, 5);
         
         for (size_t i = 0; i < count; i++) {
@@ -471,7 +471,7 @@ void showTemperatureHistory() {
     for (uint8_t sensor = 0; sensor < 4; sensor++) {
         Serial.printf("\n%s Temperature:\n", sensorNames[sensor]);
         
-        RuntimeStorage::TempReading readings[10];
+        rtstorage::TempReading readings[10];
         size_t count = storage.getTemperatureHistory(sensor, readings, 10);
         
         for (size_t i = 0; i < count; i++) {
