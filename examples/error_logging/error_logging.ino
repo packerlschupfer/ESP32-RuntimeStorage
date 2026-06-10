@@ -10,7 +10,7 @@
 #define I2C_SCL_PIN 32
 
 // Create storage instance
-RuntimeStorage::RuntimeStorage storage;
+rtstorage::RuntimeStorage storage;
 
 // Error codes for demo
 enum ErrorCode {
@@ -100,7 +100,7 @@ void loop() {
 void showErrorStats() {
     Serial.println(F("\n--- Current Error Statistics ---"));
     
-    RuntimeStorage::ErrorStats stats;
+    rtstorage::ErrorStats stats;
     if (storage.getErrorStats(stats)) {
         Serial.print(F("Total errors: "));
         Serial.println(stats.totalErrors);
@@ -161,7 +161,7 @@ void demonstrateErrorRetrieval() {
     size_t displayCount = min(errorCount, (size_t)10);
     
     for (size_t i = 0; i < displayCount; i++) {
-        RuntimeStorage::ErrorEntry entry;
+        rtstorage::ErrorEntry entry;
         if (storage.getError(i, entry)) {
             Serial.print(F("\n["));
             Serial.print(i);
@@ -194,7 +194,7 @@ void demonstrateErrorRetrieval() {
 void demonstrateCriticalErrors() {
     Serial.println(F("\n--- Critical Errors Only ---"));
     
-    RuntimeStorage::ErrorEntry criticalErrors[5];
+    rtstorage::ErrorEntry criticalErrors[5];
     size_t count = storage.getCriticalErrors(criticalErrors, 5);
     
     if (count == 0) {
@@ -240,7 +240,7 @@ void testErrorClearing() {
     Serial.println(storage.getErrorCount());
     
     // Check stats after clear
-    RuntimeStorage::ErrorStats stats;
+    rtstorage::ErrorStats stats;
     if (storage.getErrorStats(stats)) {
         Serial.print(F("Stats - Total: "));
         Serial.print(stats.totalErrors);

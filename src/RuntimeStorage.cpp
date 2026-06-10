@@ -82,7 +82,7 @@ bool RuntimeStorage::begin(TwoWire& wire, uint8_t address) {
 }
 
 // Check if connected
-bool RuntimeStorage::isConnected() {
+bool RuntimeStorage::isConnected() noexcept {
     if (!_initialized || !_wire) return false;
     
     _wire->beginTransmission(_i2cAddress);

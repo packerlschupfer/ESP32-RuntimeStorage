@@ -15,7 +15,7 @@ public:
     BoilerController();
     
     // Initialization
-    bool begin(RuntimeStorage::RuntimeStorage* storage, SemaphoreHandle_t* i2cMutex);
+    bool begin(rtstorage::RuntimeStorage* storage, SemaphoreHandle_t* i2cMutex);
     
     // Main update function
     void update();
@@ -33,7 +33,7 @@ public:
     const char* getModeName() const;
     
     // PID functions
-    bool getPIDState(uint8_t controllerId, RuntimeStorage::PIDState& state) const;
+    bool getPIDState(uint8_t controllerId, rtstorage::PIDState& state) const;
     
     // Error handling
     bool hasError() const { return _activeErrors != 0; }
@@ -44,7 +44,7 @@ public:
     
 private:
     // References
-    RuntimeStorage::RuntimeStorage* _storage;
+    rtstorage::RuntimeStorage* _storage;
     SemaphoreHandle_t* _i2cMutex;
     
     // State variables
