@@ -742,9 +742,11 @@ void RuntimeStorage::printMemoryMap() {
         ADDR_ERROR_LOG, ADDR_ERROR_LOG + SIZE_ERROR_LOG - 1, SIZE_ERROR_LOG);
     RTSTOR_LOG_I("Error Stats:   0x%04X - 0x%04X (%d bytes)", 
         ADDR_ERROR_STATS, ADDR_ERROR_STATS + SIZE_ERROR_STATS - 1, SIZE_ERROR_STATS);
-    RTSTOR_LOG_I("Reserved:      0x%04X - 0x%04X (%d bytes)", 
-        ADDR_RESERVED, FRAM_SIZE - 1, FRAM_SIZE - ADDR_RESERVED);
-    RTSTOR_LOG_I("Total:         %d bytes", FRAM_SIZE);
+    RTSTOR_LOG_I("Reserved:      0x%04lX - 0x%04lX (%lu bytes)",
+        static_cast<unsigned long>(ADDR_RESERVED),
+        static_cast<unsigned long>(FRAM_SIZE - 1),
+        static_cast<unsigned long>(FRAM_SIZE - ADDR_RESERVED));
+    RTSTOR_LOG_I("Total:         %lu bytes", static_cast<unsigned long>(FRAM_SIZE));
 }
 
 // Get free space
